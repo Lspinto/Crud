@@ -7,7 +7,6 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 
-
 def list_clientes(request):
     clientes = Cliente.objects.all()
     return render(request, 'clientes.html', {'clientes': clientes})
@@ -43,10 +42,33 @@ def delete_cliente(request, id):
 
 
 class ClienteView(APIView):
+    queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
+
+    def list(self, request, *args, **kwargs):
+        cliente = Cliente.objects.all()
+        serializer = ClienteSerializer(cliente, many=True)
+        return Response(serializer.data)
 
     def get(self, request, format=None):
         serializer = self.serializer_class(Cliente.objects.all(), many=True)
+        return Response(serializer.data)
+
+
+
+    def post(self, request, format=None):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"message": "403 Forbidden"}, status=status.HTTP_409_CONFLICT)
+
+class ClienteidView(APIView):
+
+    def get(self, request, id, format=None):
+        user = Cliente.objects.get(id=id)
+        serializer = ClienteSerializer(user)
         return Response(serializer.data)
 
     def post(self, request, format=None):
@@ -57,13 +79,13 @@ class ClienteView(APIView):
         else:
             return Response({"message": "403 Forbidden"}, status=status.HTTP_409_CONFLICT)
 
-    def delete(self, request):
-        queryset = Cliente.objects.get(id = request.data['id'])
+    def delete(self, request, id):
+        queryset = Cliente.objects.get(id=id)
         queryset.delete()
         return Response(data='Deletado', status=status.HTTP_410_GONE)
 
-    def put(self, request):
-        cliente = Cliente.objects.get(id = request.data['id'])
+    def put(self, request, id):
+        cliente = Cliente.objects.get(id=id)
         serializer = ClienteSerializer(cliente, data=request.data)
         if serializer.is_valid():
             serializer.save()
